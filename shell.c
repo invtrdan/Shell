@@ -18,10 +18,10 @@ extern char **environ;
 void print_shell_prompt() {
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        sprintf(prompt, "%s> ", cwd);
+        snprintf(prompt, sizeof(prompt), "%s> ", cwd);
     } else {
         perror("getcwd");
-        sprintf(prompt, "> ");
+        strcpy(prompt, "> ");
     }
     printf("%s", prompt);
 }
@@ -37,9 +37,10 @@ int main() {
             print_shell_prompt(); // Print the shell prompt
 
             // Read input from stdin and store it in command_line. If there's an error, exit immediately. 
-            if ((fgets(command_line, MAX_COMMAND_LINE_LEN, stdin) == NULL) && ferror(stdin)) {
+            if ((fgets(command_line, sizeof(command_line), stdin) == NULL) && ferror(stdin)) {
                 fprintf(stderr, "fgets error");
-                exit(0);
+                perror("fgets error");
+                exit(EXIT_FAILURE);
             }
         } while (command_line[0] == '\n'); // Handle empty lines
 
@@ -52,10 +53,9 @@ int main() {
         }
 
         // Tokenize the command line input (split it on whitespace)
-        char *arguments[MAX_COMMAND_LINE_ARGS];
-        char *token = strtok(command_line, delimiters);
         int arg_count = 0;
-        while (token != NULL) {
+        char *token = strtok(command_line, delimiters);
+        while (token != NULL && arg_count < MAX_COMMAND_LINE_ARGS - 1) {
             arguments[arg_count] = token;
             arg_count++;
             token = strtok(NULL, delimiters);
